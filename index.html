@@ -2380,7 +2380,7 @@
             nama: "dr. Andi Pratama, Sp.M",
             poli: "Poli Mata",
             jadwal: "Senin, 09.00 - 12.00 WIB",
-            status: "Telat 1 Jam", // demonstrated visually with orange badge
+            status: "Hadir", // default: belum ada perubahan jadwal
             pasienCount: 20,
           },
           {
@@ -2396,7 +2396,7 @@
             nama: "dr. Rina Wulandari, Sp.PD",
             poli: "Poli Penyakit Dalam",
             jadwal: "Senin, 08.30 - 11.30 WIB",
-            status: "Telat 30 Menit",
+            status: "Hadir",
             pasienCount: 22,
           },
           {
@@ -2411,7 +2411,11 @@
       }
       let doctors = makeInitialDoctors();
 
-      // Patients dummy data for Reschedule Management
+      // Patients dummy data for Reschedule Management — hanya data registrasi
+      // (identitas & poli). Status respon/reschedule TIDAK pre-seeded di
+      // sini; itu baru ada setelah staf menjalankan "Ubah Jadwal" dan
+      // tersimpan di `notifs`, supaya tab Manajemen Reschedule memang
+      // kosong sampai ada perubahan jadwal sungguhan.
       function makeInitialPatients() {
         return [
           {
@@ -2419,54 +2423,36 @@
             nama: "Ahmad Santoso",
             hp: "0812xxxxxx56",
             poli: "Poli Mata",
-            statusRespon: "Minta Reschedule",
-            slotDipilih: "Selasa, 09.00 WIB",
-            approved: false,
           },
           {
             id: "P02",
             nama: "Siti Aminah",
             hp: "0813xxxxxx89",
             poli: "Poli Mata",
-            statusRespon: "Tetap Hadir",
-            slotDipilih: "-",
-            approved: true,
           },
           {
             id: "P03",
             nama: "Budi Wijaya",
             hp: "0852xxxxxx12",
             poli: "Poli Mata",
-            statusRespon: "Belum Respon",
-            slotDipilih: "-",
-            approved: false,
           },
           {
             id: "P04",
             nama: "Dewi Pratama",
             hp: "0878xxxxxx34",
             poli: "Poli Penyakit Dalam",
-            statusRespon: "Minta Reschedule",
-            slotDipilih: "Rabu, 10.00 WIB",
-            approved: false,
           },
           {
             id: "P05",
             nama: "Agus Hidayat",
             hp: "0821xxxxxx90",
             poli: "Poli Penyakit Dalam",
-            statusRespon: "Tetap Hadir",
-            slotDipilih: "-",
-            approved: true,
           },
           {
             id: "P06",
             nama: "Rina Kusuma",
             hp: "0819xxxxxx77",
             poli: "Poli Anak",
-            statusRespon: "Minta Reschedule",
-            slotDipilih: "Kamis, 08.30 WIB",
-            approved: false,
           },
         ];
       }
@@ -2696,11 +2682,14 @@
       function renderActivityFeedItem1() {
         const el = document.getElementById("activity-item-1-text");
         if (!el) return;
-        let doc = activeChange
+        const doc = activeChange
           ? doctors.find((d) => d.id === activeChange.docId)
-          : null;
-        if (!doc) doc = doctors.find((d) => d.status !== "Hadir") || doctors[0];
-        if (!doc) return;
+          : doctors.find((d) => d.status !== "Hadir");
+        if (!doc) {
+          el.innerHTML =
+            "Belum ada aktivitas. Ubah jadwal salah satu dokter di tab Jadwal &amp; Status untuk memicu notifikasi.";
+          return;
+        }
         el.innerHTML = `Notifikasi status praktik
         <strong>${doc.nama}</strong> (${doc.status}) terkirim ke
         <strong>${doc.pasienCount} pasien</strong> terdaftar (${doc.poli}).`;
@@ -2826,26 +2815,48 @@
       }
 
       // Render Patient Reschedule Table
+      // Manajemen Reschedule dibaca langsung dari `notifs` — tabel ini
+      // kosong sampai staf benar-benar menjalankan "Ubah Jadwal" dan
+      // pasien mulai merespons, bukan dari status yang di-preset.
       function renderPatientTable() {
         const tbody = document.getElementById("patient-table-body");
         tbody.innerHTML = "";
 
-        let list = [...patients];
+        let list = [...notifs];
         if (currentRole === "Perawat Poli Mata") {
-          list = list.filter((p) => p.poli === "Poli Mata");
+          list = list.filter((n) => {
+            const doc = doctors.find((d) => d.id === n.docId);
+            return doc && doc.poli === "Poli Mata";
+          });
         }
 
-        list.forEach((p) => {
+        if (!list.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-10 px-6 text-center text-slate-400">
+          Belum ada permintaan reschedule. Ubah jadwal salah satu dokter di tab
+          <b>Jadwal &amp; Status</b> untuk memulai.
+        </td></tr>`;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        list.forEach((n) => {
+          const p = patients.find((x) => x.id === n.pid);
+          if (!p) return;
           let badgeRespon = "";
-          if (p.statusRespon === "Minta Reschedule") {
+          if (n.resp && n.resp.type === "slot") {
+            const sl = slots.find((s) => s.id === n.resp.slot);
             badgeRespon = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
             <i data-lucide="calendar-plus" class="w-3 h-3 text-amber-700"></i> Minta Reschedule
           </span>
-          ${p.slotDipilih !== "-" ? `<span class="block text-[11px] text-slate-500 mt-1 font-mono">Pilihan: <strong>${p.slotDipilih}</strong></span>` : ""}
+          ${sl ? `<span class="block text-[11px] text-slate-500 mt-1 font-mono">Pilihan: <strong>${sl.label}</strong></span>` : ""}
           `;
-          } else if (p.statusRespon === "Tetap Hadir") {
+          } else if (n.resp && n.resp.type === "paham") {
             badgeRespon = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i> Tetap Hadir
+          </span>`;
+          } else if (n.resp && n.resp.type === "bantuan") {
+            badgeRespon = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            <i data-lucide="life-buoy" class="w-3 h-3 text-rose-600"></i> Minta Bantuan
           </span>`;
           } else {
             badgeRespon = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -2853,19 +2864,17 @@
           </span>`;
           }
 
-          let actionBtn = "";
-          if (p.statusRespon === "Minta Reschedule") {
-            if (!p.approved) {
+          let actionBtn = `<span class="text-slate-400 text-xs">-</span>`;
+          if (n.resp && (n.resp.type === "slot" || n.resp.type === "bantuan")) {
+            if (!n.handled) {
               actionBtn = `<button onclick="approveReschedule('${p.id}')" class="px-3.5 py-1.5 rounded-lg bg-brand-400 hover:bg-brand-500 text-slate-900 font-bold text-xs flex items-center gap-1.5 mx-auto transition shadow-xs">
-              <i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5]"></i> Approve
+              <i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5]"></i> ${n.resp.type === "slot" ? "Approve" : "Tandai Ditangani"}
             </button>`;
             } else {
               actionBtn = `<span class="inline-flex items-center gap-1 text-emerald-600 font-bold text-xs">
               <i data-lucide="check-check" class="w-4 h-4"></i> Disetujui
             </span>`;
             }
-          } else {
-            actionBtn = `<span class="text-slate-400 text-xs">-</span>`;
           }
 
           const tr = document.createElement("tr");
@@ -2889,13 +2898,23 @@
       }
 
       function approveReschedule(patientId) {
+        const n = notifs.find(
+          (x) =>
+            x.pid === patientId &&
+            x.resp &&
+            (x.resp.type === "slot" || x.resp.type === "bantuan"),
+        );
         const p = patients.find((item) => item.id === patientId);
-        if (p) {
-          p.approved = true;
+        if (n && p) {
+          n.handled = true;
           renderPatientTable();
+          if (currentView === "pasien") renderPasienView();
+          const sl = n.resp.slot && slots.find((s) => s.id === n.resp.slot);
           showToast(
             "Reschedule Disetujui!",
-            `Jadwal baru ${p.nama} (${p.slotDipilih}) telah divalidasi dan tiket baru terkirim.`,
+            sl
+              ? `Jadwal baru ${p.nama} (${sl.label}) telah divalidasi dan tiket baru terkirim.`
+              : `Permintaan bantuan ${p.nama} telah ditandai selesai ditangani.`,
           );
         }
       }
@@ -3000,8 +3019,7 @@
               <thead>
                 <tr class="text-slate-400 uppercase text-[10px] tracking-wider">
                   <th class="py-1.5 pr-3">Pasien</th>
-                  <th class="py-1.5 pr-3">Kontak</th>
-                  <th class="py-1.5">Respon Saat Ini</th>
+                  <th class="py-1.5">Kontak</th>
                 </tr>
               </thead>
               <tbody>
@@ -3009,10 +3027,10 @@
                   affected
                     .map(
                       (p) =>
-                        `<tr class="border-t border-slate-100"><td class="py-2 pr-3 font-semibold text-slate-800">${p.nama}</td><td class="py-2 pr-3 font-mono text-slate-500">${p.hp}</td><td class="py-2 text-slate-500">${p.statusRespon}</td></tr>`,
+                        `<tr class="border-t border-slate-100"><td class="py-2 pr-3 font-semibold text-slate-800">${p.nama}</td><td class="py-2 font-mono text-slate-500">${p.hp}</td></tr>`,
                     )
                     .join("") ||
-                  `<tr><td colspan="3" class="py-2 text-slate-400">Tidak ada pasien terdaftar di poli ini.</td></tr>`
+                  `<tr><td colspan="2" class="py-2 text-slate-400">Tidak ada pasien terdaftar di poli ini.</td></tr>`
                 }
               </tbody>
             </table>
