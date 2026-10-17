@@ -1,0 +1,1425 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font:
+          14px -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fff;
+        color: #000;
+      }
+      img {
+        max-width: 100%;
+      }
+      [hidden]:not([hidden="until-found" i]) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <title>DokterSiaga</title>
+    <meta name="claude:viewport-fit-sides" content="cover" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* Layout: ruang kerja petugas dengan navigasi tab di atas; satu panel kerja, satu panel ponsel pasien di sisi kanan saat simulasi. */
+      :root {
+        --bg: #f3f5f4;
+        --surface: #ffffff;
+        --surface2: #eaf0ee;
+        --fg: #142220;
+        --muted: #5a6b68;
+        --line: #d5dedb;
+        --accent: #0b6b66;
+        --accent-fg: #ffffff;
+        --accent-soft: #d9eeeb;
+        --ok: #17744a;
+        --ok-soft: #dcf1e5;
+        --warn: #8f5200;
+        --warn-soft: #fbebcf;
+        --bad: #b0261d;
+        --bad-soft: #fbe0dd;
+        --info: #2c5a9a;
+        --info-soft: #e0eaf8;
+        --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+        --font-body: "IBM Plex Sans", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0f1816;
+          --surface: #16221f;
+          --surface2: #1d2d2a;
+          --fg: #e6efed;
+          --muted: #9bb0ac;
+          --line: #2b3f3b;
+          --accent: #4cc2b8;
+          --accent-fg: #06201d;
+          --accent-soft: #17403c;
+          --ok: #5ed199;
+          --ok-soft: #17392a;
+          --warn: #f0b35a;
+          --warn-soft: #3b2c10;
+          --bad: #ff8e84;
+          --bad-soft: #431c19;
+          --info: #8db6ee;
+          --info-soft: #1b2c47;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0f1816;
+        --surface: #16221f;
+        --surface2: #1d2d2a;
+        --fg: #e6efed;
+        --muted: #9bb0ac;
+        --line: #2b3f3b;
+        --accent: #4cc2b8;
+        --accent-fg: #06201d;
+        --accent-soft: #17403c;
+        --ok: #5ed199;
+        --ok-soft: #17392a;
+        --warn: #f0b35a;
+        --warn-soft: #3b2c10;
+        --bad: #ff8e84;
+        --bad-soft: #431c19;
+        --info: #8db6ee;
+        --info-soft: #1b2c47;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-body);
+        font-size: 15px;
+        line-height: 1.5;
+        padding-block: 0 48px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        line-height: 1.15;
+        margin: 0;
+        text-wrap: balance;
+      }
+      h2 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      h3 {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding-block: 16px 8px;
+      }
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .brand b {
+        font-family: var(--font-display);
+        font-size: 22px;
+        letter-spacing: -0.01em;
+      }
+      .brand span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .nav {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+      }
+      .nav button {
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 10px 14px;
+        white-space: nowrap;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .nav button[aria-current="page"] {
+        color: var(--fg);
+        border-bottom-color: var(--accent);
+      }
+      .btn {
+        background: var(--accent);
+        color: var(--accent-fg);
+        border: 0;
+        border-radius: 6px;
+        padding: 9px 16px;
+        font-weight: 600;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--line);
+      }
+      .btn.sm {
+        padding: 5px 10px;
+        font-size: 13px;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .hint {
+        background: var(--info-soft);
+        color: var(--info);
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      .sim {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .g2 {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      }
+      .g3 {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .mono {
+        font-family: var(--font-mono);
+        font-size: 13px;
+      }
+      .pill {
+        display: inline-block;
+        border-radius: 99px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .p-ok {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+      .p-warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .p-bad {
+        background: var(--bad-soft);
+        color: var(--bad);
+      }
+      .p-info {
+        background: var(--info-soft);
+        color: var(--info);
+      }
+      .p-mute {
+        background: var(--surface2);
+        color: var(--muted);
+      }
+      .tablebox {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th {
+        text-align: left;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      /* ringkasan */
+      .hero {
+        padding-block: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-width: 760px;
+      }
+      .hero h1 {
+        font-size: clamp(28px, 5vw, 44px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .hero p {
+        font-size: 17px;
+        color: var(--muted);
+      }
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+        gap: 12px;
+        counter-reset: s;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      .steps li {
+        counter-increment: s;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .steps li::before {
+        content: counter(s);
+        font-family: var(--font-mono);
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .actor {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .scope h3 {
+        margin-bottom: 8px;
+      }
+      .scope ul,
+      .rules {
+        margin: 0;
+        padding-left: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .sc-yes {
+        border-top: 4px solid var(--ok);
+      }
+      .sc-sim {
+        border-top: 4px solid var(--warn);
+      }
+      .sc-no {
+        border-top: 4px solid var(--muted);
+      }
+      .arch {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .arch div {
+        background: var(--surface2);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 13px;
+        flex: 1 1 140px;
+      }
+      .arch div.later {
+        background: transparent;
+        border: 1px dashed var(--muted);
+        color: var(--muted);
+      }
+      .arch b {
+        display: block;
+      }
+      .chk {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .chk li {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .box {
+        flex: 0 0 20px;
+        height: 20px;
+        border: 2px solid var(--line);
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .chk li.done .box {
+        background: var(--ok);
+        border-color: var(--ok);
+        color: var(--surface);
+      }
+      /* dashboard */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+        gap: 12px;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+      }
+      .stat b {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 30px;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .stat.alert b {
+        color: var(--bad);
+      }
+      .sched {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .sched:last-child {
+        border-bottom: 0;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 99px;
+        padding: 4px 12px;
+        font-size: 13px;
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-fg);
+      }
+      .bar {
+        height: 10px;
+        border-radius: 99px;
+        background: var(--surface2);
+        display: flex;
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+      }
+      /* form */
+      label {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+      select {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--fg);
+        font: inherit;
+      }
+      .opt {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-weight: 400;
+      }
+      .opt input {
+        margin-top: 4px;
+      }
+      .opt.off {
+        opacity: 0.55;
+      }
+      /* ponsel */
+      .split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 820px) {
+        .split {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      .phone {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto;
+        border: 8px solid #1c2927;
+        border-radius: 30px;
+        background: var(--surface);
+        overflow: hidden;
+        min-height: 520px;
+      }
+      .phone .bar-top {
+        background: #075e54;
+        color: #fff;
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+      .phone .body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .bubble {
+        background: #dcf8c6;
+        color: #1a2a22;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      .bubble a {
+        color: #0b5aa8;
+        word-break: break-all;
+      }
+      .wa-bg {
+        background: #ece5dd;
+        padding: 12px;
+        min-height: 400px;
+      }
+      .slotbtn {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
+      .slotbtn.full {
+        background: var(--surface2);
+        color: var(--muted);
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        background: var(--fg);
+        color: var(--bg);
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 20;
+        max-width: 90vw;
+      }
+      .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 20, 18, 0.5);
+        display: grid;
+        place-items: center;
+        z-index: 30;
+        padding: 16px;
+      }
+      .modal {
+        max-width: 440px;
+        width: 100%;
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+      }
+      .modal h3 {
+        margin-bottom: 2px;
+      }
+      .modal .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .modal details.acc {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+      .modal details.acc summary {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--accent);
+        list-style: none;
+      }
+      .modal details.acc summary::-webkit-details-marker {
+        display: none;
+      }
+      .modal details.acc summary::before {
+        content: "▸";
+        display: inline-block;
+        margin-right: 6px;
+        transition: transform 0.15s;
+      }
+      .modal details.acc[open] summary::before {
+        transform: rotate(90deg);
+      }
+      .modal details.acc[open] summary {
+        margin-bottom: 8px;
+      }
+    </style>
+
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <b>DokterSiaga</b
+          ><span>RS AR Fachrudin UMS · prototype hackathon · data dummy</span>
+        </div>
+        <button class="btn ghost sm" id="reset">Ulang demo dari awal</button>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <main id="main"></main>
+    </div>
+    <div id="toast" class="toast" hidden></div>
+    <div id="modalBg" class="modal-bg" hidden>
+      <div class="modal panel stack" id="modal"></div>
+    </div>
+
+    <script>
+      (function () {
+        const $ = (s) => document.querySelector(s);
+        const esc = (t) =>
+          String(t).replace(
+            /[&<>"]/g,
+            (c) =>
+              ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+          );
+        const now = () =>
+          new Date()
+            .toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+            .replace(/\./g, ":");
+        const REASONS = [
+          "Dokter berhalangan hadir pada jam praktik",
+          "Dokter sedang menjalankan tugas layanan mendadak",
+          "Penyesuaian jadwal praktik oleh rumah sakit",
+        ];
+        const TABS = [
+          ["ringkas", "Demo ringkas"],
+          ["dash", "Dashboard"],
+          ["ubah", "Ubah jadwal"],
+          ["pasien", "Sisi pasien"],
+          ["riwayat", "Riwayat"],
+        ];
+        let S,
+          timers = [];
+
+        function build() {
+          timers.forEach(clearInterval);
+          timers = [];
+          const F = [
+            "Ahmad",
+            "Siti",
+            "Budi",
+            "Dewi",
+            "Agus",
+            "Rina",
+            "Joko",
+            "Wati",
+            "Hendra",
+            "Lestari",
+            "Eko",
+            "Nur",
+            "Bambang",
+            "Sri",
+            "Dian",
+            "Yusuf",
+            "Ratna",
+            "Fajar",
+            "Aminah",
+            "Rizki",
+            "Taufik",
+            "Maya",
+            "Slamet",
+            "Indah",
+            "Hadi",
+            "Fitri",
+            "Wahyu",
+            "Endang",
+            "Arif",
+            "Putri",
+            "Sugeng",
+            "Kartini",
+            "Imam",
+            "Yanti",
+            "Heru",
+          ];
+          const L = [
+            "Santoso",
+            "Rahayu",
+            "Wijaya",
+            "Pratama",
+            "Hidayat",
+            "Kusuma",
+            "Susanti",
+            "Nugroho",
+            "Utami",
+            "Saputra",
+            "Handayani",
+            "Setiawan",
+            "Purnama",
+            "Wibowo",
+            "Astuti",
+            "Firmansyah",
+            "Permata",
+            "Ramadhan",
+            "Safitri",
+            "Mulyadi",
+          ];
+          const patients = [];
+          const add = (n, sid, reg) => {
+            for (let i = 0; i < n; i++) {
+              const k = patients.length;
+              patients.push({
+                id: "P" + String(k + 1).padStart(2, "0"),
+                nama: F[k] + " " + L[(k * 7 + 3) % 20],
+                hp: "0812-••••-" + String(1000 + ((k * 737) % 9000)),
+                sid,
+                reg: reg && i === n - 1 ? "batal" : "aktif",
+              });
+            }
+          };
+          add(21, "S1", true);
+          add(8, "S2");
+          add(6, "S3");
+          S = {
+            view: "ringkas",
+            filter: "all",
+            focusSid: null,
+            phonePid: null,
+            change: null,
+            blocked: false,
+            form: {
+              sid: "S1",
+              status: "Berubah",
+              reason: 0,
+              slots: new Set(["K1", "K2", "K4"]),
+            },
+            schedules: [
+              {
+                id: "S1",
+                dokter: "dr. Rina Wulandari, Sp.PD",
+                poli: "Penyakit Dalam",
+                hari: "Senin",
+                jam: "09.00–12.00",
+                status: "Terjadwal",
+              },
+              {
+                id: "S2",
+                dokter: "dr. Bagas Prakoso, Sp.A",
+                poli: "Anak",
+                hari: "Senin",
+                jam: "10.00–13.00",
+                status: "Terjadwal",
+              },
+              {
+                id: "S3",
+                dokter: "dr. Laila Anwar, Sp.OG",
+                poli: "Kebidanan",
+                hari: "Senin",
+                jam: "13.00–16.00",
+                status: "Terjadwal",
+              },
+            ],
+            patients,
+            slots: [
+              { id: "K1", label: "Senin 13.00–14.00", cap: 5, used: 0 },
+              { id: "K2", label: "Selasa 09.00–10.00", cap: 8, used: 0 },
+              { id: "K3", label: "Rabu 10.00–11.00", cap: 3, used: 3 },
+              { id: "K4", label: "Kamis 09.30–10.30", cap: 2, used: 0 },
+            ],
+            notifs: [],
+            audit: [],
+          };
+        }
+        function log(who, act) {
+          S.audit.unshift({ t: now(), who, act });
+        }
+        const sch = (id) => S.schedules.find((s) => s.id === id);
+        const pat = (id) => S.patients.find((p) => p.id === id);
+        const free = (sl) => sl.cap - sl.used;
+        const needs = (n) =>
+          n.status === "gagal" ||
+          (n.status === "terkirim" && !n.resp) ||
+          (n.resp && n.resp.type !== "paham" && !n.handled);
+        function stateOf(n) {
+          if (n.status === "menunggu") return ["Menunggu kirim", "p-mute"];
+          if (n.status === "gagal") return ["Gagal terkirim", "p-bad"];
+          if (!n.resp)
+            return [
+              n.reminded ? "Sudah diingatkan" : "Belum merespons",
+              "p-warn",
+            ];
+          if (n.resp.type === "paham") return ["Sudah paham", "p-ok"];
+          if (n.resp.type === "bantuan")
+            return [n.handled ? "Bantuan selesai" : "Minta bantuan", "p-bad"];
+          return [
+            n.handled ? "Janji dikonfirmasi" : "Pilih jadwal baru",
+            n.handled ? "p-ok" : "p-info",
+          ];
+        }
+        function toast(t) {
+          const e = $("#toast");
+          e.textContent = t;
+          e.hidden = false;
+          clearTimeout(toast.t);
+          toast.t = setTimeout(() => (e.hidden = true), 2600);
+        }
+        function go(v) {
+          S.view = v;
+          render();
+          window.scrollTo(0, 0);
+        }
+
+        /* ---------- aksi ---------- */
+        function openConfirm() {
+          const f = S.form,
+            sc = sch(f.sid);
+          if (f.status === "Berubah" && f.slots.size === 0 && !confirmNoSlot) {
+            toast(
+              "Pilih minimal satu jadwal pengganti, atau ubah status menjadi Dibatalkan.",
+            );
+            return;
+          }
+          const reg = S.patients.filter(
+            (p) => p.sid === f.sid && p.reg === "aktif",
+          ).length;
+          const bt = S.patients.filter(
+            (p) => p.sid === f.sid && p.reg === "batal",
+          ).length;
+          const slotLbls = [...f.slots].map(
+            (id) => S.slots.find((s) => s.id === id).label,
+          );
+          $("#modal").innerHTML = `<h3>Konfirmasi perubahan jadwal</h3>
+   <p class="muted">Periksa sekali lagi sebelum notifikasi terkirim ke pasien.</p>
+   <p><b>${esc(sc.dokter)}</b><br><span class="muted">Poli ${esc(sc.poli)} · ${sc.hari} ${sc.jam}</span></p>
+   <p>Status baru: <span class="pill ${f.status === "Berubah" ? "p-warn" : "p-bad"}">${f.status}</span></p>
+   <p class="muted">Alasan ke pasien: ${esc(REASONS[f.reason])}</p>
+   <p><b>${reg}</b> pasien dengan pendaftaran aktif akan diberi notifikasi.${bt ? ` <span class="muted">(${bt} pendaftaran batal dilewati)</span>` : ""}</p>
+   <p class="muted">${slotLbls.length ? `Jadwal pengganti ditawarkan: ${slotLbls.join(", ")}.` : "Tidak ada jadwal pengganti ditawarkan."}</p>
+   <details class="acc"><summary>Lihat daftar pasien (${reg + bt})</summary>
+    <div class="tablebox"><table><thead><tr><th>Pasien</th><th>Kontak</th><th>Pendaftaran</th></tr></thead><tbody>${S.patients
+      .filter((p) => p.sid === f.sid)
+      .map(
+        (p) =>
+          `<tr><td><b>${esc(p.nama)}</b><br><span class="mono muted">${p.id}</span></td><td class="mono">${p.hp}</td><td><span class="pill ${p.reg === "aktif" ? "p-ok" : "p-mute"}">${p.reg === "aktif" ? "Aktif" : "Dibatalkan"}</span></td></tr>`,
+      )
+      .join("")}</tbody></table></div>
+   </details>
+   <p class="muted" style="font-size:13px">Tindakan ini langsung mengirim notifikasi ke semua pasien terdampak dan tercatat di riwayat.</p>
+   <div class="actions"><button class="btn ghost" id="confirmNo">Batal</button><button class="btn" id="confirmYes">Ya, simpan dan kirim</button></div>`;
+          $("#modalBg").hidden = false;
+        }
+        function closeConfirm() {
+          $("#modalBg").hidden = true;
+        }
+        function saveChange() {
+          const f = S.form,
+            sc = sch(f.sid),
+            t0 = performance.now();
+          if (f.status === "Berubah" && f.slots.size === 0 && !confirmNoSlot) {
+            toast(
+              "Pilih minimal satu jadwal pengganti, atau ubah status menjadi Dibatalkan.",
+            );
+            return;
+          }
+          sc.status = f.status;
+          const old = S.change && S.change.sid === f.sid;
+          S.change = {
+            sid: f.sid,
+            reason: REASONS[f.reason],
+            slotIds: [...f.slots],
+            savedAt: now(),
+            queuedMs: 0,
+          };
+          S.focusSid = f.sid;
+          log(
+            "Petugas poli (Dewi)",
+            `Ubah jadwal ${sc.dokter} ${sc.hari} → ${f.status}. Alasan: ${REASONS[f.reason]}`,
+          );
+          const targets = S.patients.filter(
+            (p) =>
+              p.sid === f.sid &&
+              p.reg === "aktif" &&
+              !S.notifs.some((n) => n.pid === p.id && n.sid === f.sid),
+          );
+          const skipped = S.patients.filter(
+            (p) => p.sid === f.sid && p.reg === "batal",
+          ).length;
+          targets.forEach((p) => {
+            const tok = Array.from(
+              { length: 10 },
+              () =>
+                "abcdefghjkmnpqrstuvwxyz23456789"[
+                  Math.floor(Math.random() * 31)
+                ],
+            ).join("");
+            S.notifs.push({
+              pid: p.id,
+              sid: f.sid,
+              token: tok,
+              status: "menunggu",
+              sentAt: null,
+              tries: 0,
+              resp: null,
+              handled: false,
+              reminded: false,
+            });
+          });
+          S.change.queuedMs = Math.max(1, Math.round(performance.now() - t0));
+          log(
+            "Sistem",
+            `${targets.length} notifikasi masuk antrean (${S.change.queuedMs} ms). ${skipped ? skipped + " pendaftaran batal tidak diberi notifikasi. " : ""}${old && !targets.length ? "Tidak ada notifikasi baru: duplikat dicegah." : ""}`,
+          );
+          if (!targets.length)
+            toast("Tidak ada notifikasi baru, duplikat dicegah.");
+          const q = [...S.notifs.filter((n) => n.status === "menunggu")];
+          let i = 0;
+          const tm = setInterval(() => {
+            const n = q[i++];
+            if (!n) {
+              clearInterval(tm);
+              return;
+            }
+            const idx = S.notifs.indexOf(n);
+            if (idx === 4 || idx === 13) {
+              n.status = "gagal";
+              n.tries = 1;
+              log(
+                "Sistem",
+                `Pesan ke ${pat(n.pid).nama} gagal terkirim (nomor tidak aktif, simulasi)`,
+              );
+            } else {
+              n.status = "terkirim";
+              n.sentAt = now();
+            }
+            if (i === q.length) {
+              log(
+                "Sistem",
+                `Pengiriman selesai: ${S.notifs.filter((x) => x.status === "terkirim").length} terkirim, ${S.notifs.filter((x) => x.status === "gagal").length} gagal`,
+              );
+            }
+            render(true);
+          }, 180);
+          timers.push(tm);
+          go("dash");
+        }
+        let confirmNoSlot = false;
+        function respond(pid, type, slotId) {
+          const n = S.notifs.find((x) => x.pid === pid);
+          if (!n || n.resp) return;
+          if (type === "slot") {
+            const sl = S.slots.find((s) => s.id === slotId);
+            if (free(sl) <= 0) {
+              S.blocked = true;
+              log("Sistem", `Pilihan ${sl.label} ditolak: slot penuh`);
+              toast(
+                "Slot ini sudah penuh. Pilih jadwal lain atau minta bantuan petugas.",
+              );
+              render();
+              return;
+            }
+            sl.used++;
+            n.resp = { type: "slot", slot: slotId };
+            log(
+              "Pasien " + pat(pid).nama,
+              `Memilih jadwal pengganti ${sl.label} (menunggu konfirmasi petugas)`,
+            );
+          } else {
+            n.resp = { type };
+            log(
+              "Pasien " + pat(pid).nama,
+              type === "paham"
+                ? "Menyatakan sudah paham perubahan jadwal"
+                : "Meminta bantuan petugas",
+            );
+          }
+          render();
+        }
+        function autoRespond() {
+          const cand = S.notifs.filter(
+            (n) => n.status === "terkirim" && !n.resp && n.sid === S.focusSid,
+          );
+          let k = 0;
+          cand.forEach((n) => {
+            if (k < 12) {
+              const sl = S.slots.filter(
+                (s) => S.change.slotIds.includes(s.id) && free(s) > 0,
+              )[0];
+              if (sl) {
+                respond(n.pid, "slot", sl.id);
+                k++;
+                return;
+              }
+            }
+            if (k < 16) {
+              respond(n.pid, "bantuan");
+              k++;
+            }
+          });
+          toast("Respons pasien disimulasikan.");
+        }
+        function staff(pid, act) {
+          const n = S.notifs.find((x) => x.pid === pid),
+            p = pat(pid);
+          if (act === "retry") {
+            n.status = "terkirim";
+            n.tries++;
+            n.sentAt = now();
+            log("Petugas admisi (Hana)", `Kirim ulang ke ${p.nama}: berhasil`);
+          }
+          if (act === "remind") {
+            n.reminded = true;
+            log(
+              "Petugas admisi (Hana)",
+              `Mengingatkan ${p.nama} yang belum merespons`,
+            );
+          }
+          if (act === "done") {
+            n.handled = true;
+            const sl = n.resp.slot && S.slots.find((s) => s.id === n.resp.slot);
+            log(
+              "Petugas admisi (Hana)",
+              n.resp.type === "slot"
+                ? `Mengonfirmasi janji ${p.nama} di ${sl.label}`
+                : `Menyelesaikan bantuan untuk ${p.nama}`,
+            );
+          }
+          render();
+        }
+
+        /* ---------- tampilan ---------- */
+        function vRingkas() {
+          const c = checks();
+          return `<div class="stack">
+                  <section class="hero"><button class="btn" data-go="dash">Coba demo</button></div></section>
+                  </div>`;
+        }
+        function checks() {
+          const ch = S.change,
+            ns = S.notifs.filter((n) => ch && n.sid === ch.sid);
+          const act = ch
+            ? S.patients.filter((p) => p.sid === ch.sid && p.reg === "aktif")
+                .length
+            : 0;
+          return [
+            [
+              "Petugas dapat mengubah jadwal dokter",
+              "Status, alasan, dan jadwal pengganti tersimpan.",
+              !!ch,
+            ],
+            [
+              "Pasien terdampak teridentifikasi dengan benar",
+              "Hanya pendaftaran aktif di jadwal itu; jadwal lain dan pendaftaran batal tidak ikut.",
+              !!ch && ns.length === act,
+            ],
+            [
+              "Notifikasi otomatis diproses",
+              "Pesan dibuat tanpa kirim manual dan waktu antrean tercatat.",
+              !!ch && ns.length > 0 && ch.queuedMs < 60000,
+            ],
+            [
+              "Pasien dapat merespons",
+              "Tautan membuka informasi dan pasien memilih tindakan.",
+              ns.some((n) => n.resp),
+            ],
+            [
+              "Reschedule memvalidasi slot",
+              "Slot penuh ditolak, pilihan sah tercatat.",
+              S.blocked && ns.some((n) => n.resp && n.resp.type === "slot"),
+            ],
+            [
+              "Dashboard menunjukkan status terkini",
+              "Respons, kegagalan, dan tindak lanjut terlihat.",
+              !!ch && ns.some((n) => n.status !== "menunggu"),
+            ],
+            [
+              "Riwayat tindakan dapat diaudit",
+              "Perubahan dan respons punya catatan waktu.",
+              S.audit.length > 2,
+            ],
+            [
+              "Demo menjaga privasi",
+              "Data dummy, nomor tersamarkan, tautan tanpa identitas.",
+              true,
+            ],
+          ];
+        }
+        function vDash() {
+          const ns = S.notifs.filter((n) => n.sid === S.focusSid);
+          const cnt = (f) => ns.filter(f).length;
+          const resp = cnt((n) => n.resp),
+            need = cnt(needs);
+          let h = '<div class="stack">';
+          if (!S.change)
+            h += `<div class="hint">Mulai di sini: pilih satu jadwal di bawah dan klik <b>Ubah</b>. Contoh kasus: dr. Rina mendadak menangani tindakan darurat sebelum praktik jam 09.00.</div>`;
+          h += `<div class="panel"><h2 style="margin-bottom:6px">Jadwal praktik Senin</h2>${S.schedules
+            .map((s) => {
+              const reg = S.patients.filter(
+                (p) => p.sid === s.id && p.reg === "aktif",
+              ).length;
+              const pc =
+                s.status === "Terjadwal"
+                  ? "p-ok"
+                  : s.status === "Berubah"
+                    ? "p-warn"
+                    : "p-bad";
+              return `<div class="sched"><div><b>${esc(s.dokter)}</b><br><span class="muted">Poli ${esc(s.poli)} · ${s.hari} ${s.jam} · ${reg} pasien terdaftar</span></div><div style="display:flex;gap:10px;align-items:center"><span class="pill ${pc}">${s.status}</span><button class="btn sm ghost" data-edit="${s.id}">Ubah</button></div></div>`;
+            })
+            .join("")}</div>`;
+          if (S.change) {
+            const sc = sch(S.focusSid);
+            h += `<div class="stats">
+     <div class="stat"><b>${ns.length}</b><span>Pasien terdampak</span></div>
+     <div class="stat"><b>${cnt((n) => n.status === "terkirim")}</b><span>Terkirim</span></div>
+     <div class="stat ${cnt((n) => n.status === "gagal") ? "alert" : ""}"><b>${cnt((n) => n.status === "gagal")}</b><span>Gagal kirim</span></div>
+     <div class="stat"><b>${resp}</b><span>Sudah merespons</span></div>
+     <div class="stat ${need ? "alert" : ""}"><b>${need}</b><span>Perlu tindak lanjut</span></div></div>
+     <div class="panel stack"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><div><h3>${esc(sc.dokter)}: ${S.change.reason ? esc(S.change.reason) : ""}</h3><span class="muted">Disimpan ${S.change.savedAt} · masuk antrean dalam <span class="mono">${S.change.queuedMs} ms</span> (target di bawah 60 detik)</span></div>
+      <button class="btn sm" id="auto" ${cnt((n) => n.status === "terkirim" && !n.resp) ? "" : "disabled"}>Simulasikan respons pasien</button></div>
+      <div class="bar" title="Komposisi status">${[
+        [
+          "var(--ok)",
+          cnt((n) => n.resp && (n.resp.type === "paham" || n.handled)),
+        ],
+        [
+          "var(--info)",
+          cnt((n) => n.resp && n.resp.type === "slot" && !n.handled),
+        ],
+        [
+          "var(--bad)",
+          cnt(
+            (n) =>
+              n.status === "gagal" ||
+              (n.resp && n.resp.type === "bantuan" && !n.handled),
+          ),
+        ],
+        ["var(--warn)", cnt((n) => n.status === "terkirim" && !n.resp)],
+        ["var(--line)", cnt((n) => n.status === "menunggu")],
+      ]
+        .map(
+          (x) =>
+            `<i style="width:${ns.length ? (x[1] / ns.length) * 100 : 0}%;background:${x[0]}"></i>`,
+        )
+        .join("")}</div>
+      <div class="chips" role="group" aria-label="Filter">${[
+        ["all", "Semua"],
+        ["need", "Perlu tindak lanjut"],
+        ["gagal", "Gagal kirim"],
+        ["belum", "Belum merespons"],
+        ["bantuan", "Minta bantuan"],
+        ["slot", "Pilih jadwal"],
+      ]
+        .map(
+          (f) =>
+            `<button class="chip" data-f="${f[0]}" aria-pressed="${S.filter === f[0]}">${f[1]}</button>`,
+        )
+        .join("")}</div>
+      <div class="tablebox"><table><thead><tr><th>Pasien</th><th>Kontak</th><th>Kirim</th><th>Respons</th><th>Tindakan</th></tr></thead><tbody>${ns.filter(filt).map(rowN).join("") || '<tr><td colspan="5" class="muted">Tidak ada pasien di filter ini.</td></tr>'}</tbody></table></div></div>`;
+          }
+          return h + "</div>";
+        }
+        function filt(n) {
+          const f = S.filter;
+          return (
+            f === "all" ||
+            (f === "need" && needs(n)) ||
+            (f === "gagal" && n.status === "gagal") ||
+            (f === "belum" && n.status === "terkirim" && !n.resp) ||
+            (f === "bantuan" && n.resp && n.resp.type === "bantuan") ||
+            (f === "slot" && n.resp && n.resp.type === "slot")
+          );
+        }
+        function rowN(n) {
+          const p = pat(n.pid),
+            [lbl, cls] = stateOf(n),
+            sl =
+              n.resp &&
+              n.resp.slot &&
+              S.slots.find((s) => s.id === n.resp.slot);
+          const kp = {
+            menunggu: ["Menunggu", "p-mute"],
+            terkirim: ["Terkirim", "p-ok"],
+            gagal: ["Gagal", "p-bad"],
+          }[n.status];
+          let act = '<span class="muted">–</span>';
+          if (n.status === "gagal")
+            act = `<button class="btn sm" data-st="retry" data-p="${n.pid}">Coba ulang</button>`;
+          else if (n.status === "terkirim" && !n.resp && !n.reminded)
+            act = `<button class="btn sm ghost" data-st="remind" data-p="${n.pid}">Ingatkan</button>`;
+          else if (n.resp && n.resp.type === "slot" && !n.handled)
+            act = `<button class="btn sm" data-st="done" data-p="${n.pid}">Konfirmasi janji</button>`;
+          else if (n.resp && n.resp.type === "bantuan" && !n.handled)
+            act = `<button class="btn sm" data-st="done" data-p="${n.pid}">Tandai ditangani</button>`;
+          return `<tr><td><b>${esc(p.nama)}</b><br><span class="mono muted">${p.id}</span></td><td class="mono">${p.hp}</td><td><span class="pill ${kp[1]}">${kp[0]}</span>${n.tries > 1 ? `<br><span class="muted" style="font-size:12px">percobaan ${n.tries}</span>` : ""}</td><td><span class="pill ${cls}">${lbl}</span>${sl ? `<br><span class="muted" style="font-size:12px">${sl.label}</span>` : ""}</td><td>${act}</td></tr>`;
+        }
+        function vUbah() {
+          const f = S.form,
+            sc = sch(f.sid),
+            reg = S.patients.filter(
+              (p) => p.sid === f.sid && p.reg === "aktif",
+            ).length,
+            bt = S.patients.filter(
+              (p) => p.sid === f.sid && p.reg === "batal",
+            ).length;
+          return `<div class="split"><div class="panel stack">
+   <div><h2>Ubah jadwal dokter</h2><p class="muted">Dokter menyampaikan perubahan ke petugas poli, petugas memasukkannya di sini.</p></div>
+   <div><label for="f-sid">Jadwal</label><select id="f-sid">${S.schedules.map((s) => `<option value="${s.id}" ${s.id === f.sid ? "selected" : ""}>${esc(s.dokter)} · ${s.hari} ${s.jam}</option>`).join("")}</select></div>
+   <div><label for="f-status">Status baru</label><select id="f-status"><option ${f.status === "Berubah" ? "selected" : ""}>Berubah</option><option ${f.status === "Dibatalkan" ? "selected" : ""}>Dibatalkan</option></select></div>
+   <div><label for="f-reason">Alasan untuk pasien</label><select id="f-reason">${REASONS.map((r, i) => `<option value="${i}" ${i === f.reason ? "selected" : ""}>${r}</option>`).join("")}</select>
+    <p class="muted" style="font-size:13px;margin-top:6px">Hanya alasan yang sudah disetujui RS. Tidak ada kolom bebas, supaya kondisi medis dokter tidak bocor ke pasien.</p></div>
+   <div><label>Jadwal pengganti yang ditawarkan</label>${S.slots.map((s) => `<label class="opt ${free(s) <= 0 ? "off" : ""}"><input type="checkbox" data-slot="${s.id}" ${f.slots.has(s.id) ? "checked" : ""}><span><b>${s.label}</b><br><span class="muted">${free(s) > 0 ? `Sisa ${free(s)} dari ${s.cap} kursi` : "Penuh (ikut ditawarkan untuk menguji validasi)"}</span></span></label>`).join("")}</div>
+   <div><button class="btn" id="save">Simpan dan kirim notifikasi</button></div></div>
+  <aside class="panel stack"><h3>Yang akan terjadi</h3>
+   <p><b>${reg}</b> pasien dengan pendaftaran aktif di ${esc(sc.dokter)} akan diberi notifikasi.</p>
+   ${bt ? `<p class="muted">${bt} pendaftaran sudah dibatalkan, tidak ikut diberi pesan.</p>` : ""}
+   <p class="muted">Pasien di dokter lain tidak diganggu. Perubahan dicatat dulu, baru notifikasi diproses. Menyimpan dua kali tidak membuat pesan ganda.</p></aside></div>`;
+        }
+        function vPasien() {
+          const ns = S.notifs.filter((n) => n.sid === S.focusSid);
+          if (!S.change)
+            return `<div class="hint">Belum ada notifikasi. Ubah jadwal dulu di tab <b>Ubah jadwal</b>, lalu kembali ke sini untuk melihat pesan yang diterima pasien.</div>`;
+          const cur = S.phonePid && S.notifs.find((n) => n.pid === S.phonePid);
+          return `<div class="split"><div class="stack"><div class="sim">Simulasi: pesan ini tidak dikirim lewat WhatsApp sungguhan. Pilih pasien untuk membuka tautannya di ponsel.</div>
+   <div class="panel tablebox"><table><thead><tr><th>Pasien</th><th>Pesan</th><th></th></tr></thead><tbody>${ns
+     .map((n) => {
+       const p = pat(n.pid),
+         [l, c] = stateOf(n);
+       return `<tr><td><b>${esc(p.nama)}</b><br><span class="mono muted">${p.hp}</span></td><td><span class="pill ${c}">${l}</span></td><td><button class="btn sm ${S.phonePid === n.pid ? "" : "ghost"}" data-open="${n.pid}" ${n.status === "terkirim" ? "" : "disabled"}>Buka di ponsel</button></td></tr>`;
+     })
+     .join("")}</tbody></table></div></div>
+   <div>${phone(cur)}</div></div>`;
+        }
+        function phone(n) {
+          if (!n)
+            return `<div class="phone"><div class="bar-top">RS AR Fachrudin UMS</div><div class="body muted">Pilih pasien di sebelah untuk melihat pesannya.</div></div>`;
+          const sc = sch(n.sid),
+            url = "dokter-siaga.example/r/" + n.token;
+          return `<div class="phone"><div class="bar-top">RS AR Fachrudin UMS</div>
+   <div class="wa-bg"><div class="bubble">RS AR Fachrudin UMS: jadwal ${esc(sc.dokter)} (Poli ${esc(sc.poli)}) ${sc.hari} ${sc.jam} ${sc.status === "Dibatalkan" ? "dibatalkan" : "berubah"}. Lihat pilihan Anda: <a href="#" data-openlink="${n.pid}">${url}</a><div class="muted" style="font-size:11px;text-align:right;margin-top:4px;color:#667">${n.sentAt || ""}</div></div></div></div>`;
+        }
+        function pageRespon(n) {
+          const p = pat(n.pid),
+            sc = sch(n.sid);
+          if (n.resp) {
+            const sl = n.resp.slot && S.slots.find((s) => s.id === n.resp.slot);
+            return `<div class="pill p-ok" style="align-self:flex-start">Respons tercatat</div><p>${n.resp.type === "paham" ? "Terima kasih. Kami mencatat bahwa Anda sudah menerima informasi ini." : n.resp.type === "bantuan" ? "Permintaan bantuan Anda sudah diterima. Petugas akan menghubungi Anda." : `Pilihan Anda <b>${sl.label}</b> sudah kami terima. ${n.handled ? "Petugas sudah mengonfirmasi janji Anda." : "Janji temu menjadi pasti setelah dikonfirmasi petugas."}`}</p>`;
+          }
+          const opts = S.change.slotIds.map((id) =>
+            S.slots.find((s) => s.id === id),
+          );
+          return `<div><b>Selamat Pagi, ${esc(p.nama.split(" ")[0])}.</b></div>
+    <div style="background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px"><b>Jadwal ${S.change.slotIds.length || sc.status === "Dibatalkan" ? (sc.status === "Dibatalkan" ? "dibatalkan" : "berubah") : "berubah"}</b><br>${esc(sc.dokter)}, Poli ${esc(sc.poli)}, ${sc.hari} ${sc.jam}.<br>${esc(S.change.reason)}.</div>
+    <b style="font-size:14px">Pilih jadwal pengganti</b>
+    ${opts.length ? opts.map((s) => `<button class="slotbtn ${free(s) <= 0 ? "full" : ""}" data-slot-pick="${s.id}" data-p="${n.pid}"><span>${s.label}</span><span class="pill ${free(s) > 0 ? "p-ok" : "p-mute"}">${free(s) > 0 ? "Sisa " + free(s) : "Penuh"}</span></button>`).join("") : '<span class="muted" style="font-size:14px">Belum ada jadwal pengganti.</span>'}
+    <button class="btn ghost" data-resp="paham" data-p="${n.pid}">Saya paham perubahan ini</button>
+    <button class="btn ghost" data-resp="bantuan" data-p="${n.pid}">Minta bantuan petugas</button>`;
+        }
+        function vRespon() {
+          const n = S.phonePid && S.notifs.find((x) => x.pid === S.phonePid);
+          if (!n || !S.change)
+            return `<div class="hint">Tautan tidak valid atau sudah tidak berlaku. <button class="btn sm ghost" data-go="pasien">Kembali ke sisi pasien</button></div>`;
+          const url = "dokter-siaga.example/r/" + n.token;
+          return `<div class="stack" style="max-width:420px;margin:0 auto">
+   <div class="sim">Simulasi: halaman yang terbuka di ponsel pasien setelah mengklik tautan WhatsApp.</div>
+   <div><button class="btn ghost sm" data-go="pasien">← Kembali ke sisi pasien</button></div>
+   <div class="panel" style="padding:0;overflow:hidden">
+    <div class="mono muted" style="background:var(--surface2);padding:8px 14px;font-size:11px;border-bottom:1px solid var(--line);word-break:break-all">${url}</div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">${pageRespon(n)}</div>
+   </div></div>`;
+        }
+        function vRiwayat() {
+          return `<div class="panel stack"><div><h2>Riwayat dan audit</h2><p class="muted">Setiap perubahan, pengiriman, respons, dan tindakan petugas tercatat dengan waktu dan pelaku.</p></div>
+  ${S.audit.length ? `<div class="tablebox"><table><thead><tr><th>Waktu</th><th>Pelaku</th><th>Kejadian</th></tr></thead><tbody>${S.audit.map((a) => `<tr><td class="mono">${a.t}</td><td style="white-space:nowrap">${esc(a.who)}</td><td>${esc(a.act)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">Belum ada catatan. Jalankan demo dari tab Dashboard.</p>'}</div>`;
+        }
+
+        function render(soft) {
+          $("#nav").innerHTML = TABS.map(
+            (t) =>
+              `<button data-tab="${t[0]}" ${S.view === t[0] ? 'aria-current="page"' : ""}>${t[1]}</button>`,
+          ).join("");
+          const v = {
+            ringkas: vRingkas,
+            dash: vDash,
+            ubah: vUbah,
+            pasien: vPasien,
+            respon: vRespon,
+            riwayat: vRiwayat,
+          }[S.view]();
+          const m = $("#main");
+          if (soft && S.view === "ubah") return;
+          m.innerHTML = v;
+        }
+        document.addEventListener("click", (e) => {
+          if (e.target.id === "modalBg") return closeConfirm();
+          const link = e.target.closest("a[data-openlink]");
+          if (link) {
+            e.preventDefault();
+            S.phonePid = link.dataset.openlink;
+            return go("respon");
+          }
+          const t = e.target.closest("button,[data-go]");
+          if (!t) return;
+          const d = t.dataset;
+          if (t.id === "reset") {
+            build();
+            render();
+            toast("Demo diulang.");
+            return;
+          }
+          if (d.tab) return go(d.tab);
+          if (d.go) return go(d.go);
+          if (d.edit) {
+            S.form.sid = d.edit;
+            S.form.slots = new Set(["K1", "K2", "K4"]);
+            return go("ubah");
+          }
+          if (d.f) {
+            S.filter = d.f;
+            return render();
+          }
+          if (t.id === "save") return openConfirm();
+          if (t.id === "confirmNo") return closeConfirm();
+          if (t.id === "confirmYes") {
+            closeConfirm();
+            return saveChange();
+          }
+          if (t.id === "auto") return autoRespond();
+          if (d.st) return staff(d.p, d.st);
+          if (d.open) {
+            S.phonePid = d.open;
+            return render();
+          }
+          if (d.slotPick) return respond(d.p, "slot", d.slotPick);
+          if (d.resp) return respond(d.p, d.resp);
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !$("#modalBg").hidden) closeConfirm();
+        });
+        document.addEventListener("change", (e) => {
+          const t = e.target,
+            f = S.form;
+          if (t.id === "f-sid") {
+            f.sid = t.value;
+            render();
+          } else if (t.id === "f-status") {
+            f.status = t.value;
+            confirmNoSlot = t.value === "Dibatalkan";
+          } else if (t.id === "f-reason") f.reason = +t.value;
+          else if (t.dataset.slot) {
+            t.checked
+              ? f.slots.add(t.dataset.slot)
+              : f.slots.delete(t.dataset.slot);
+          }
+        });
+        build();
+        render();
+      })();
+    </script>
+  </body>
+</html>
