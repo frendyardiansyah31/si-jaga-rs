@@ -3195,13 +3195,19 @@
         }
         const d = doc || doctors.find((x) => x.id === n.docId);
         const url = "si-notif-medis.example/r/" + n.token;
-        const changed = d.status === "Dibatalkan" ? "dibatalkan" : "berubah";
+        const changed =
+          d.status === "Dibatalkan" ? "dibatalkan" : "mengalami perubahan";
+        const spesialis = d.poli.replace(/^Poli /, "Dokter ");
         return `<div class="w-full max-w-[340px] mx-auto border-8 border-slate-800 rounded-[30px] bg-white overflow-hidden min-h-[480px]">
         <div class="bg-[#075e54] text-white px-3.5 py-2.5 text-xs">RS AR Fachrudin UMS</div>
         <div class="bg-[#ece5dd] p-3 min-h-[400px]">
           <div class="bg-[#dcf8c6] text-[#1a2a22] rounded-lg px-3 py-2.5 text-[13px]">
-            RS AR Fachrudin UMS: jadwal ${d.nama} (Poli ${d.poli}) ${changed}. Lihat pilihan Anda:
-            <a href="#" onclick="openResponPage('${n.pid}'); return false" class="text-[#0b5aa8] break-all">${url}</a>
+            <p class="font-semibold">Halo, Bapak/Ibu.</p>
+            <p class="mt-2">Kami informasikan bahwa jadwal praktik <b>${d.nama}</b> (${spesialis}) ${changed}.</p>
+            <p class="mt-2">Untuk melihat jadwal praktik terbaru, silakan klik tautan berikut:</p>
+            <a href="#" onclick="openResponPage('${n.pid}'); return false" class="block mt-1 font-semibold text-[#0b5aa8] break-all">${url}</a>
+            <p class="mt-2">Mohon cek jadwal terbaru sebelum datang ke rumah sakit agar pelayanan lebih nyaman.</p>
+            <p class="mt-2">Terima kasih atas perhatian Bapak/Ibu. Semoga selalu sehat.</p>
             <div class="text-right text-[10px] text-slate-500 mt-1">${n.sentAt || ""}</div>
           </div>
         </div>
